@@ -23,6 +23,7 @@ dev = [
   "ipdb",
   "pytest",
   "torch",
+  "ruff",
 ]
 
 [build-system]
