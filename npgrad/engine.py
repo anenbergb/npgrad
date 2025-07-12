@@ -82,7 +82,9 @@ class Tensor:
         return out
 
     def relu(self):
-        out = Tensor(0 if self.data < 0 else self.data, (self,), "ReLU")
+        out_data = self.data.copy()
+        out_data[out_data < 0] = 0
+        out = Tensor(out_data, (self,), "ReLU")
 
         def _backward():
             self.grad += (out.data > 0) * out.grad
