@@ -5,7 +5,7 @@ def matmul(input: Tensor, other: Tensor):
     """
     Matrix product of two tensors.
     """
-    input_exp = input.unsqueeze(-1)  # shape (m,n,1)
-    other_exp = other.unsqueeze(0)  # shape (1,n,p)
-    prod = input_exp * other_exp  # shape (m,n,p)
-    return prod.sum(dim=1)  # shape (m,p)
+    input_exp = input.unsqueeze(-1)  # shape (N,m,n,1)
+    other_exp = other.unsqueeze(-3)  # shape (N,1,n,p)
+    prod = input_exp * other_exp  # shape (N,m,n,p)
+    return prod.sum(dim=-2)  # shape (m,p)

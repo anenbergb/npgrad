@@ -220,6 +220,16 @@ class Tensor:
         out._backward = _backward
         return out
 
+    def transpose(self, dim0, dim1):
+        """Interchange two axes in the tensor"""
+        out = Tensor(self.data.swapaxes(dim0, dim1), (self,), f"tranpose({dim0}, {dim1})")
+
+        def _backward():
+            self.grad += out.grad.swapaxes(dim1, dim0)
+
+        out._backward = _backward
+        return out
+
 
 def reduce_grad(grad_output, original_shape):
     """
