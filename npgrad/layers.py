@@ -43,50 +43,40 @@ class Linear(Module):
         return f"Linear(in_features={self.weight.shape[0]}, out_features={self.weight.shape[1]}, bias={self.bias is not None})"
 
 
-# class Neuron(Module):
-#     def __init__(self, nin, nonlin=True):
-#         self.w = [Tensor(random.uniform(-1, 1)) for _ in range(nin)]
-#         self.b = Tensor(0)
-#         self.nonlin = nonlin
+class MLP(Module):
+    def __init__(
+        self,
+        input_dim: int,
+        hidden_dims: list[int],
+        output_dim: int,
+        activation="relu",
+        bias: bool = True,
+        dtype: np.dtype = np.float32,
+    ):
+        """
+        input_dim: int, size of input features
+        hidden_dims: list of int, hidden layer sizes
+        output_dim: int, size of output features
+        activation: relu, tanh
+        """
+        assert activation in ("relu", "tanh")
+        self.activation = activation
 
-#     def __call__(self, x):
-#         act = sum((wi * xi for wi, xi in zip(self.w, x)), self.b)
-#         return act.relu() if self.nonlin else act
+        # Build a sequence of layers
+        self.layers = []
+        prev_dim = input_dim
+        for h_dim in hidden_dims:
+            self.layers.append(Linear(prev_dim, h_dim, bias, dtype))
+            prev_dim = h_dim
 
-#     def parameters(self):
-#         return self.w + [self.b]
+        # Output layer
+        self.layers.append(Linear(prev_dim, output_dim, bias, dtype))
 
-#     def __repr__(self):
-#         return f"{'ReLU' if self.nonlin else 'Linear'}Neuron({len(self.w)})"
-
-
-# class Layer(Module):
-#     def __init__(self, nin, nout, **kwargs):
-#         self.neurons = [Neuron(nin, **kwargs) for _ in range(nout)]
-
-#     def __call__(self, x):
-#         out = [n(x) for n in self.neurons]
-#         return out[0] if len(out) == 1 else out
-
-#     def parameters(self):
-#         return [p for n in self.neurons for p in n.parameters()]
-
-#     def __repr__(self):
-#         return f"Layer of [{', '.join(str(n) for n in self.neurons)}]"
-
-
-# class MLP(Module):
-#     def __init__(self, nin, nouts):
-#         sz = [nin] + nouts
-#         self.layers = [Layer(sz[i], sz[i + 1], nonlin=i != len(nouts) - 1) for i in range(len(nouts))]
-
-#     def __call__(self, x):
-#         for layer in self.layers:
-#             x = layer(x)
-#         return x
-
-#     def parameters(self):
-#         return [p for layer in self.layers for p in layer.parameters()]
-
-#     def __repr__(self):
-#         return f"MLP of [{', '.join(str(layer) for layer in self.layers)}]"
+    def __call__(self, x: Tensor) -> Tensor:
+        for layer in self.layers[:-1]:
+            x = layer(x)
+            if self.activation == "relu":
+                x = x.relu()
+            elif self.activation == "tanh":
+                x = x.tanh()
+        return self.layers[-1](x)

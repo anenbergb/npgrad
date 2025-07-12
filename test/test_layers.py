@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from npgrad.engine import Tensor
-from npgrad.layers import Linear
+from npgrad.layers import Linear, MLP
 
 def test_linear():
     N, d_in, d_out = 5,4,3
@@ -51,4 +51,60 @@ def test_linear2():
     assert np.allclose(sum_np.data, sumpt.detach().numpy())
     assert np.allclose(linear.weight.grad, linear_pt.weight.grad.numpy())
     assert np.allclose(linear.bias.grad, linear_pt.bias.grad.numpy())
+    assert np.allclose(x.grad, x_pt.grad.numpy())
+
+
+class MLP_pt(torch.nn.Module):
+    def __init__(self, input_dim, hidden_dims, output_dim, activation=torch.nn.ReLU, bias: bool = True, dtype: torch.dtype = torch.float32):
+        super().__init__()
+
+        # Build a sequence of layers
+        layers = []
+        prev_dim = input_dim
+        for h_dim in hidden_dims:
+            layers.append(torch.nn.Linear(prev_dim, h_dim, bias=bias, dtype=dtype))
+            layers.append(activation())
+            prev_dim = h_dim
+
+        # Output layer
+        layers.append(torch.nn.Linear(prev_dim, output_dim, bias=bias, dtype=dtype))
+        self.net = torch.nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.net(x)
+    
+
+def test_mlp():
+    N = 5
+    d_in = 10
+    d_out = 3
+    hidden_dims = [10,15,20]
+    mlp = MLP(d_in, hidden_dims, d_out, activation="relu", bias=True, dtype=np.float32)
+    x_np = np.random.randn(N, d_in).astype(np.float32)
+    x = Tensor(x_np)
+    out = mlp(x)
+    sum_np  = out.sum()
+    sum_np.backward()
+
+    mlp_pt = MLP_pt(d_in, hidden_dims, d_out, activation=torch.nn.ReLU, bias=True, dtype=torch.float32)
+    layer_idx = 0
+    for layer_pt in mlp_pt.net:
+        if isinstance(layer_pt, torch.nn.Linear):
+            layer = mlp.layers[layer_idx]
+            layer_pt.weight.data = torch.from_numpy(layer.weight.data)
+            layer_pt.bias.data = torch.from_numpy(layer.bias.data)
+            layer_idx += 1
+
+    x_pt = torch.from_numpy(x_np)
+    x_pt.requires_grad = True
+    out_pt = mlp_pt(x_pt)
+    sumpt  = out_pt.sum()
+    sumpt.backward()
+
+    assert np.allclose(out.data, out_pt.detach().numpy())
+    assert np.allclose(sum_np.data, sumpt.detach().numpy())
+    layer1 = mlp.layers[0]
+    layer1_pt = mlp_pt.net[0]
+    assert np.allclose(layer1.weight.grad, layer1_pt.weight.grad.numpy())
+    assert np.allclose(layer1.bias.grad, layer1_pt.bias.grad.numpy())
     assert np.allclose(x.grad, x_pt.grad.numpy())
