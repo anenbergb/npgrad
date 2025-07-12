@@ -7,7 +7,7 @@ def test_linear():
     N, d_in, d_out = 5,4,3
     
     linear = Linear(d_in, d_out, bias=True, dtype=np.float32)
-    x_np = np.random.randn(N, d_in).astype(np.float32)
+    x_np = np.random.uniform(low=-1.0, high=1.0, size = (N,d_in)).astype(np.float32)
     x = Tensor(x_np)
     out = linear(x)
     sum_np  = out.sum()
@@ -32,7 +32,7 @@ def test_linear2():
     N1, N2, d_in, d_out = 6,5,4,3
     
     linear = Linear(d_in, d_out, bias=True, dtype=np.float32)
-    x_np = np.random.randn(N1,N2,d_in).astype(np.float32)
+    x_np = np.random.uniform(low=-1.0, high=1.0, size = (N1,N2,d_in)).astype(np.float32)
     x = Tensor(x_np)
     out = linear(x)
     sum_np  = out.sum()
@@ -80,7 +80,7 @@ def test_mlp():
     d_out = 3
     hidden_dims = [10,15,20]
     mlp = MLP(d_in, hidden_dims, d_out, activation="relu", bias=True, dtype=np.float32)
-    x_np = np.random.randn(N, d_in).astype(np.float32)
+    x_np = np.random.uniform(low=-1.0, high=1.0, size = (N, d_in)).astype(np.float32)
     x = Tensor(x_np)
     out = mlp(x)
     sum_np  = out.sum()
@@ -103,8 +103,12 @@ def test_mlp():
 
     assert np.allclose(out.data, out_pt.detach().numpy())
     assert np.allclose(sum_np.data, sumpt.detach().numpy())
-    layer1 = mlp.layers[0]
-    layer1_pt = mlp_pt.net[0]
-    assert np.allclose(layer1.weight.grad, layer1_pt.weight.grad.numpy())
-    assert np.allclose(layer1.bias.grad, layer1_pt.bias.grad.numpy())
+    layer_idx = 0
+    for layer_pt in mlp_pt.net:
+        if isinstance(layer_pt, torch.nn.Linear):
+            layer = mlp.layers[layer_idx]
+            assert np.allclose(layer.weight.grad, layer_pt.weight.grad.numpy()), f"MLP Layer[{layer_idx}] weight.grad mismatch"
+            assert np.allclose(layer.bias.grad, layer_pt.bias.grad.numpy()), f"MLP Layer[{layer_idx}] bias.grad mismatch"
+            layer_idx += 1
+
     assert np.allclose(x.grad, x_pt.grad.numpy())

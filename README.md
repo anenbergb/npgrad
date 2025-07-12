@@ -2,7 +2,7 @@
 An autograd engine and neural network library implemented with NumPy and inspired by [micrograd](https://github.com/karpathy/micrograd/tree/master).
 
 ## Planned Components
-- [ ] MLP
+- [x] MLP
 - [ ] Conv
 - [ ] RNN
 - [ ] Scaled Dot Product Attention

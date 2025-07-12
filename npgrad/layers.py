@@ -24,7 +24,7 @@ class Linear(Module):
         # balances the forward and backward pass variances
         variance = 2 / (in_features + out_features)
         std = math.sqrt(variance)
-        trunc_normal(self.weight.shape, mean=0.0, std=std, a=-3 * std, b=3 * std)
+        self.weight.data = trunc_normal(self.weight.shape, mean=0.0, std=std, a=-3 * std, b=3 * std).astype(dtype)
 
     def __call__(self, x: Tensor) -> Tensor:
         """
@@ -40,7 +40,7 @@ class Linear(Module):
         return out
 
     def __repr__(self):
-        return f"Linear(in_features={self.weight.shape[0]}, out_features={self.weight.shape[1]}, bias={self.bias is not None})"
+        return f"Linear(in_features={self.in_features}, out_features={self.out_features}, bias={self.bias is not None})"
 
 
 class MLP(Module):
@@ -56,7 +56,7 @@ class MLP(Module):
         """
         input_dim: int, size of input features
         hidden_dims: list of int, hidden layer sizes
-        output_dim: int, size of output features
+        output_dim: int, size of output featuresgrad
         activation: relu, tanh
         """
         assert activation in ("relu", "tanh")
@@ -80,3 +80,16 @@ class MLP(Module):
             elif self.activation == "tanh":
                 x = x.tanh()
         return self.layers[-1](x)
+
+    def __repr__(self):
+        lines = []
+        for i, layer in enumerate(self.layers[:-1]):
+            lines.append(f"  ({i}): {repr(layer)}")
+            if self.activation == "relu":
+                lines.append(f"       ReLU()")
+            elif self.activation == "tanh":
+                lines.append(f"       Tanh()")
+        # Final layer (no activation)
+        lines.append(f"  ({len(self.layers) - 1}): {repr(self.layers[-1])}")
+        inner = "\n".join(lines)
+        return f"{self.__class__.__name__}(\n  layers:\n{inner}\n)"
