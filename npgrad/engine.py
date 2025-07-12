@@ -93,6 +93,28 @@ class Tensor:
 
         return out
 
+    def tanh(self):
+        x = self.data
+        t = (np.exp(2 * x) - 1) / (np.exp(2 * x) + 1)
+        out = Tensor(t, (self,), "tanh")
+
+        def _backward():
+            self.grad += (1 - t**2) * out.grad
+
+        out._backward = _backward
+
+        return out
+
+    def exp(self):
+        out = Tensor(np.exp(self.data), (self,), "exp")
+
+        def _backward():
+            self.grad += out.data * out.grad
+
+        out._backward = _backward
+
+        return out
+
     def backward(self):
         if self.numel() > 1:
             raise RuntimeError("grad can be implicitly created only for scalar outputs")

@@ -28,7 +28,7 @@ def test_sum():
     sumpt  = tensor3pt.sum()
     sumpt.backward()
 
-    assert sum_np.data == sumpt.detach().numpy()
+    assert np.allclose(sum_np.data, sumpt.detach().numpy())
     assert np.allclose(tensor1.grad, tensor1pt.grad.numpy())
     assert np.allclose(tensor2.grad, tensor2pt.grad.numpy())
 
@@ -45,7 +45,7 @@ def test_sum_broadcast():
     sumpt  = tensor3pt.sum()
     sumpt.backward()
 
-    assert sum_np.data == sumpt.detach().numpy()
+    assert np.allclose(sum_np.data, sumpt.detach().numpy())
     assert np.allclose(tensor1.grad, tensor1pt.grad.numpy())
     assert np.allclose(tensor2.grad, tensor2pt.grad.numpy())
 
@@ -60,7 +60,7 @@ def test_sum_broadcast2():
     sumpt  = tensor2pt.sum()
     sumpt.backward()
 
-    assert sum_np.data == sumpt.detach().numpy()
+    assert np.allclose(sum_np.data, sumpt.detach().numpy())
     assert np.allclose(tensor1.grad, tensor1pt.grad.numpy())
 
 def test_sub_broadcast():
@@ -76,7 +76,7 @@ def test_sub_broadcast():
     sumpt  = tensor3pt.sum()
     sumpt.backward()
 
-    assert sum_np.data == sumpt.detach().numpy()
+    assert np.allclose(sum_np.data, sumpt.detach().numpy())
     assert np.allclose(tensor1.grad, tensor1pt.grad.numpy())
     assert np.allclose(tensor2.grad, tensor2pt.grad.numpy())
 
@@ -94,7 +94,7 @@ def test_multiply():
     sumpt  = tensor3pt.sum()
     sumpt.backward()
 
-    assert sum_np.data == sumpt.detach().numpy()
+    assert np.allclose(sum_np.data, sumpt.detach().numpy())
     assert np.allclose(tensor1.grad, tensor1pt.grad.numpy())
     assert np.allclose(tensor2.grad, tensor2pt.grad.numpy())
 
@@ -111,7 +111,7 @@ def test_multiply_broadcast():
     sumpt  = tensor3pt.sum()
     sumpt.backward()
 
-    assert sum_np.data == sumpt.detach().numpy()
+    assert np.allclose(sum_np.data, sumpt.detach().numpy())
     assert np.allclose(tensor1.grad, tensor1pt.grad.numpy())
     assert np.allclose(tensor2.grad, tensor2pt.grad.numpy())
 
@@ -126,7 +126,7 @@ def test_multiply_broadcast2():
     sumpt  = tensor2pt.sum()
     sumpt.backward()
 
-    assert sum_np.data == sumpt.detach().numpy()
+    assert np.allclose(sum_np.data, sumpt.detach().numpy())
     assert np.allclose(tensor1.grad, tensor1pt.grad.numpy())
 
 def test_power():
@@ -140,7 +140,7 @@ def test_power():
     sumpt  = tensor2pt.sum()
     sumpt.backward()
 
-    assert sum_np.data == sumpt.detach().numpy()
+    assert np.allclose(sum_np.data, sumpt.detach().numpy())
     assert np.allclose(tensor1.grad, tensor1pt.grad.numpy())
 
 def test_relu():
@@ -154,7 +154,7 @@ def test_relu():
     sumpt  = tensor2pt.sum()
     sumpt.backward()
 
-    assert sum_np.data == sumpt.detach().numpy()
+    assert np.allclose(sum_np.data, sumpt.detach().numpy())
     assert np.allclose(tensor1.grad, tensor1pt.grad.numpy())
 
 
@@ -217,3 +217,32 @@ def test_multiple_ops2():
     # backward pass went well
     assert abs(amg.grad - apt.grad.item()) < tol
     assert abs(bmg.grad - bpt.grad.item()) < tol
+
+
+def test_tanh():
+    tensor1 = Tensor([[1,2,-1],[0,-2,3]])
+    tensor2 = tensor1.tanh()
+    sum_np  = tensor2.sum()
+    sum_np.backward()
+
+    tensor1pt = torch.tensor([[1,2,-1],[0,-2,3]], requires_grad=True, dtype=torch.float64)
+    tensor2pt = tensor1pt.tanh()
+    sumpt  = tensor2pt.sum()
+    sumpt.backward()
+
+    assert np.allclose(sum_np.data, sumpt.detach().numpy())
+    assert np.allclose(tensor1.grad, tensor1pt.grad.numpy())
+
+def test_exp():
+    tensor1 = Tensor([[1,2,-1],[0,-2,3]])
+    tensor2 = tensor1.exp()
+    sum_np  = tensor2.sum()
+    sum_np.backward()
+
+    tensor1pt = torch.tensor([[1,2,-1],[0,-2,3]], requires_grad=True, dtype=torch.float64)
+    tensor2pt = tensor1pt.exp()
+    sumpt  = tensor2pt.sum()
+    sumpt.backward()
+
+    assert np.allclose(sum_np.data, sumpt.detach().numpy())
+    assert np.allclose(tensor1.grad, tensor1pt.grad.numpy())
