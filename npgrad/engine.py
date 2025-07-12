@@ -115,6 +115,20 @@ class Tensor:
 
         return out
 
+    def matmul(self, other):
+        """Matrix product of two tensors."""
+        other = other if isinstance(other, Tensor) else Tensor(other)
+
+        out = Tensor(self.data * other.data, (self, other), "@")
+
+        # broadcast other.data * out.grad, then reduce to self.data.shape
+        def _backward():
+            self.grad += reduce_grad(other.data * out.grad, self.data.shape)
+            other.grad += reduce_grad(self.data * out.grad, other.data.shape)
+
+        out._backward = _backward
+        return out
+
     def backward(self):
         if self.numel() > 1:
             raise RuntimeError("grad can be implicitly created only for scalar outputs")
@@ -175,6 +189,36 @@ class Tensor:
 
     def zeros_like(self):
         return Tensor(np.zeros_like(self.data))
+
+    def zero_grad(self):
+        self.grad = np.zeros_like(self.data)
+
+    def squeeze(self, dim):
+        """
+        Returns a tensor with all specified dimensions of size `1` removed.
+        dim: Union[int, List[int]]
+        """
+        out = Tensor(self.data.squeeze(dim), (self,), f"squeeze({dim})")
+
+        def _backward():
+            self.grad += out.grad.reshape(self.data.shape)
+
+        out._backward = _backward
+        return out
+
+    def unsqueeze(self, dim):
+        """
+        Returns a new tensor with a dimension of size one inserted at the specified position
+        The returned tensor shares the same underlying data with this tensor.
+        dim: int
+        """
+        out = Tensor(np.expand_dims(self.data, axis=dim), (self,), f"unsqueeze({dim})")
+
+        def _backward():
+            self.grad += out.grad.reshape(self.data.shape)
+
+        out._backward = _backward
+        return out
 
 
 def reduce_grad(grad_output, original_shape):
